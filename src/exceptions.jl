@@ -3,7 +3,7 @@ module Errors
 # use Cenum for error codes because it allows overriding show, unlike Base.Enum
 using CEnum
 
-using ..LibPQ: Connection, Result, libpq_c, error_message, error_field
+using ..LibPQ2: Connection, Result, libpq_c, error_message, error_field
 
 "Base abstract type for all custom exceptions thrown by LibPQ.jl"
 abstract type LibPQException <: Exception end
