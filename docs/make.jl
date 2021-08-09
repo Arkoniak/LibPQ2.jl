@@ -1,15 +1,15 @@
-using Documenter, LibPQ, Memento
+using Documenter, LibPQ2, Memento
 
-setlevel!(getlogger(LibPQ), "critical")
+setlevel!(getlogger(LibPQ2), "critical")
 
-DocMeta.setdocmeta!(LibPQ, :DocTestSetup, quote
-    using LibPQ
+DocMeta.setdocmeta!(LibPQ2, :DocTestSetup, quote
+    using LibPQ2
     DATABASE_USER = get(ENV, "LIBPQJL_DATABASE_USER", "postgres")
     conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
 end; recursive=true)
 
 makedocs(;
-    modules=[LibPQ],
+    modules=[LibPQ2],
     format=Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     pages=[
         "Home" => "index.md",
@@ -17,8 +17,8 @@ makedocs(;
         "API" => "pages/api.md",
         "FAQ" => "pages/faq.md",
     ],
-    repo="https://github.com/invenia/LibPQ.jl/blob/{commit}{path}#L{line}",
-    sitename="LibPQ.jl",
+    repo="https://github.com/arkoniak/LibPQ2.jl/blob/{commit}{path}#L{line}",
+    sitename="LibPQ2.jl",
     checkdocs=:exports,
     linkcheck=true,
     linkcheck_timeout=60,
@@ -27,5 +27,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/invenia/LibPQ.jl",
+    repo="github.com/arkoniak/LibPQ2.jl",
 )
