@@ -1,4 +1,4 @@
-module LibPQ
+module LibPQ2
 
 export status, reset!, execute, prepare, async_execute, cancel,
     num_columns, num_rows, num_params, num_affected_rows
