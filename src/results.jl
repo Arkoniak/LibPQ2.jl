@@ -225,16 +225,16 @@ function handle_result(jl_result::Result; throw_error::Bool=true)
 
         if throw_error
             close(jl_result)
-            error(LOGGER, err)
+            error(err)
         else
-            warn(LOGGER, err)
+            @warn err
         end
     else
         if result_status == libpq_c.PGRES_NONFATAL_ERROR
-            warn(LOGGER, Errors.PQResultError(jl_result))
+            @warn Errors.PQResultError(jl_result)
         end
 
-        debug(LOGGER, unsafe_string(libpq_c.PQcmdStatus(jl_result.result)))
+        @debug unsafe_string(libpq_c.PQcmdStatus(jl_result.result))
     end
 
     return jl_result

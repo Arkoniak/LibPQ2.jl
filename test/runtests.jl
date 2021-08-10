@@ -1,4 +1,4 @@
-using LibPQ
+using LibPQ2
 using Test
 using Dates
 using DataFrames
@@ -7,13 +7,9 @@ using Decimals
 using Infinity
 using Intervals
 using IterTools: imap
-using Memento
-using Memento.TestUtils
 using OffsetArrays
 using TimeZones
 using Tables
-
-Memento.config!("critical")
 
 macro test_broken_on_windows(ex)
     if Sys.iswindows()
@@ -31,23 +27,23 @@ macro test_nolog_on_windows(ex...)
     end
 end
 
-@testset "LibPQ" begin
+@testset "LibPQ2" begin
 
 @testset "ConninfoDisplay" begin
-    @test parse(LibPQ.ConninfoDisplay, "") == LibPQ.Normal
-    @test parse(LibPQ.ConninfoDisplay, "*") == LibPQ.Password
-    @test parse(LibPQ.ConninfoDisplay, "D") == LibPQ.Debug
-    @test_throws LibPQ.Errors.JLConnectionError parse(LibPQ.ConninfoDisplay, "N")
+    @test parse(LibPQ2.ConninfoDisplay, "") == LibPQ2.Normal
+    @test parse(LibPQ2.ConninfoDisplay, "*") == LibPQ2.Password
+    @test parse(LibPQ2.ConninfoDisplay, "D") == LibPQ2.Debug
+    @test_throws LibPQ2.Errors.JLConnectionError parse(LibPQ2.ConninfoDisplay, "N")
 end
 
 @testset "Version Numbers" begin
     valid_versions = [
-        (LibPQ.pqv"11", v"11"),
-        (LibPQ.pqv"11.80", v"11.0.80"),
-        (LibPQ.pqv"10.1", v"10.0.1"),
-        (LibPQ.pqv"9.1.5", v"9.1.5"),
-        (LibPQ.pqv"9.2", v"9.2.0"),
-        (LibPQ.pqv"8", v"8.0.0"),
+        (LibPQ2.pqv"11", v"11"),
+        (LibPQ2.pqv"11.80", v"11.0.80"),
+        (LibPQ2.pqv"10.1", v"10.0.1"),
+        (LibPQ2.pqv"9.1.5", v"9.1.5"),
+        (LibPQ2.pqv"9.2", v"9.2.0"),
+        (LibPQ2.pqv"8", v"8.0.0"),
     ]
 
     @testset "Valid Versions" for (pg_version, jl_version) in valid_versions
@@ -64,18 +60,18 @@ end
 
     # can't do cross-version macro testing apparently
     @testset "Invalid Versions" for pg_version_str in invalid_versions
-        @test_throws ArgumentError LibPQ._pqv_str(pg_version_str)
+        @test_throws ArgumentError LibPQ2._pqv_str(pg_version_str)
     end
 end
 
 @testset "Online" begin
-    DATABASE_USER = get(ENV, "LIBPQJL_DATABASE_USER", "postgres")
+    DATABASE_USER = get(ENV, "LibPQ2JL_DATABASE_USER", "postgres")
 
     @testset "Example SELECT" begin
-        conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=false)
-        @test conn isa LibPQ.Connection
+        conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=false)
+        @test conn isa LibPQ2.Connection
         @test isopen(conn)
-        @test status(conn) == LibPQ.libpq_c.CONNECTION_OK
+        @test status(conn) == LibPQ2.LibPQ2_c.CONNECTION_OK
         @test conn.closed[] == false
 
         text_display = sprint(show, conn)
@@ -87,13 +83,13 @@ end
             "SELECT typname FROM pg_type WHERE oid = 16";
             throw_error=false,
         )
-        @test result isa LibPQ.Result
-        @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+        @test result isa LibPQ2.Result
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
         @test isopen(result)
-        @test LibPQ.num_columns(result) == 1
-        @test LibPQ.num_rows(result) == 1
-        @test LibPQ.column_name(result, 1) == "typname"
-        @test LibPQ.column_number(result, "typname") == 1
+        @test LibPQ2.num_columns(result) == 1
+        @test LibPQ2.num_rows(result) == 1
+        @test LibPQ2.column_name(result, 1) == "typname"
+        @test LibPQ2.column_number(result, "typname") == 1
 
         data = columntable(result)
 
@@ -109,12 +105,12 @@ end
             [16];
             throw_error=false,
         )
-        @test result isa LibPQ.Result
-        @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+        @test result isa LibPQ2.Result
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
         @test isopen(result)
-        @test LibPQ.num_columns(result) == 1
-        @test LibPQ.num_rows(result) == 1
-        @test LibPQ.column_name(result, 1) == "typname"
+        @test LibPQ2.num_columns(result) == 1
+        @test LibPQ2.num_rows(result) == 1
+        @test LibPQ2.column_name(result, 1) == "typname"
 
         data = columntable(result)
 
@@ -134,13 +130,13 @@ end
             (1.0, 16);
             throw_error=false,
         )
-        @test result isa LibPQ.Result
-        @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+        @test result isa LibPQ2.Result
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
         @test isopen(result)
-        @test LibPQ.num_columns(result) == 2
-        @test LibPQ.num_rows(result) == 1
-        @test LibPQ.column_name(result, 1) == "foo"
-        @test LibPQ.column_name(result, 2) == "typname"
+        @test LibPQ2.num_columns(result) == 2
+        @test LibPQ2.num_rows(result) == 1
+        @test LibPQ2.column_name(result, 1) == "foo"
+        @test LibPQ2.column_name(result, 2) == "typname"
 
         data = columntable(result)
 
@@ -155,13 +151,13 @@ end
             (1.0, 16);
             throw_error=false,
         )
-        @test result isa LibPQ.Result
-        @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+        @test result isa LibPQ2.Result
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
         @test isopen(result)
-        @test LibPQ.num_columns(result) == 2
-        @test LibPQ.num_rows(result) == 1
-        @test LibPQ.column_name(result, 1) == "foo"
-        @test LibPQ.column_name(result, 2) == "typname"
+        @test LibPQ2.num_columns(result) == 2
+        @test LibPQ2.num_rows(result) == 1
+        @test LibPQ2.column_name(result, 1) == "foo"
+        @test LibPQ2.column_name(result, 2) == "typname"
 
         data = columntable(result)
 
@@ -180,15 +176,15 @@ end
     end
 
     @testset "Example INSERT and DELETE" begin
-        conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+        conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
 
         result = execute(conn, """
-            CREATE TEMPORARY TABLE libpqjl_test (
+            CREATE TEMPORARY TABLE LibPQ2jl_test (
                 no_nulls    varchar(10) PRIMARY KEY,
                 yes_nulls   varchar(10)
             );
         """)
-        @test status(result) == LibPQ.libpq_c.PGRES_COMMAND_OK
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_COMMAND_OK
         close(result)
 
         # get the data from PostgreSQL and let columntable construct my NamedTuple
@@ -200,9 +196,9 @@ end
             """;
             throw_error=true,
         )
-        @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-        @test LibPQ.num_rows(result) == 2
-        @test LibPQ.num_columns(result) == 2
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+        @test LibPQ2.num_rows(result) == 2
+        @test LibPQ2.num_columns(result) == 2
 
         data = columntable(result)
 
@@ -210,26 +206,26 @@ end
         @test data[:yes_nulls][1] == "bar"
         @test data[:yes_nulls][2] === missing
 
-        stmt = LibPQ.load!(
+        stmt = LibPQ2.load!(
             data,
             conn,
-            "INSERT INTO libpqjl_test (no_nulls, yes_nulls) VALUES (\$1, \$2);",
+            "INSERT INTO LibPQ2jl_test (no_nulls, yes_nulls) VALUES (\$1, \$2);",
         )
 
         @test_throws ArgumentError num_affected_rows(stmt.description)
         @test num_params(stmt) == 2
         @test num_columns(stmt) == 0  # an insert has no results
-        @test LibPQ.column_number(stmt, "no_nulls") == 0
-        @test LibPQ.column_names(stmt) == []
+        @test LibPQ2.column_number(stmt, "no_nulls") == 0
+        @test LibPQ2.column_names(stmt) == []
 
         result = execute(
             conn,
-            "SELECT no_nulls, yes_nulls FROM libpqjl_test ORDER BY no_nulls DESC;";
+            "SELECT no_nulls, yes_nulls FROM LibPQ2jl_test ORDER BY no_nulls DESC;";
             throw_error=true,
         )
-        @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-        @test LibPQ.num_rows(result) == 2
-        @test LibPQ.num_columns(result) == 2
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+        @test LibPQ2.num_rows(result) == 2
+        @test LibPQ2.num_columns(result) == 2
 
         table_data = columntable(result)
         @test table_data[:no_nulls] == data[:no_nulls]
@@ -240,10 +236,10 @@ end
 
         result = execute(
             conn,
-            "DELETE FROM libpqjl_test WHERE no_nulls = 'foo';";
+            "DELETE FROM LibPQ2jl_test WHERE no_nulls = 'foo';";
             throw_error=true,
         )
-        @test status(result) == LibPQ.libpq_c.PGRES_COMMAND_OK
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_COMMAND_OK
         @test num_rows(result) == 0
         @test num_affected_rows(result) == 1
 
@@ -251,7 +247,7 @@ end
 
         result = execute(
             conn,
-            "SELECT no_nulls, yes_nulls FROM libpqjl_test ORDER BY no_nulls DESC;";
+            "SELECT no_nulls, yes_nulls FROM LibPQ2jl_test ORDER BY no_nulls DESC;";
             throw_error=true,
         )
         table_data_after_delete = columntable(result)
@@ -262,11 +258,11 @@ end
 
         result = execute(
             conn,
-            "INSERT INTO libpqjl_test (no_nulls, yes_nulls) VALUES (\$1, \$2), (\$3, \$4);",
+            "INSERT INTO LibPQ2jl_test (no_nulls, yes_nulls) VALUES (\$1, \$2), (\$3, \$4);",
             Union{String, Missing}["foo", "bar", "quz", missing],
 
         )
-        @test status(result) == LibPQ.libpq_c.PGRES_COMMAND_OK
+        @test status(result) == LibPQ2.LibPQ2_c.PGRES_COMMAND_OK
         @test num_rows(result) == 0
         @test num_affected_rows(result) == 2
 
@@ -277,20 +273,20 @@ end
 
     @testset "load!" begin
         @testset "issue #204" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
 
             close(execute(conn, """
-                CREATE TEMPORARY TABLE libpqjl_test (
+                CREATE TEMPORARY TABLE LibPQ2jl_test (
                     id    serial PRIMARY KEY,
                     data  text[]
                 );
             """))
 
             table = (; data = [["foo", "bar"], ["baz"]])
-            LibPQ.load!(table, conn, "INSERT INTO libpqjl_test (data) VALUES (\$1);")
+            LibPQ2.load!(table, conn, "INSERT INTO LibPQ2jl_test (data) VALUES (\$1);")
 
             # TODO: compare entire tables once string array parsing is supported
-            result = execute(conn, "SELECT data[1] as data1 FROM libpqjl_test ORDER BY id;", not_null=true)
+            result = execute(conn, "SELECT data[1] as data1 FROM LibPQ2jl_test ORDER BY id;", not_null=true)
             retrieved = columntable(result)
             @test first.(table.data) == retrieved.data1
 
@@ -301,15 +297,15 @@ end
 
     @testset "COPY FROM" begin
         @testset "Example COPY FROM" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
 
             result = execute(conn, """
-                CREATE TEMPORARY TABLE libpqjl_test (
+                CREATE TEMPORARY TABLE LibPQ2jl_test (
                     no_nulls    varchar(10) PRIMARY KEY,
                     yes_nulls   varchar(10)
                 );
             """)
-            @test status(result) == LibPQ.libpq_c.PGRES_COMMAND_OK
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_COMMAND_OK
             close(result)
 
             no_nulls = map(string, 'a':'z')
@@ -324,17 +320,17 @@ end
                 end
             end
 
-            copyin = LibPQ.CopyIn("COPY libpqjl_test FROM STDIN (FORMAT CSV);", row_strings)
+            copyin = LibPQ2.CopyIn("COPY LibPQ2jl_test FROM STDIN (FORMAT CSV);", row_strings)
 
             result = execute(conn, copyin)
             @test isopen(result)
-            @test status(result) == LibPQ.libpq_c.PGRES_COMMAND_OK
-            @test isempty(LibPQ.error_message(result))
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_COMMAND_OK
+            @test isempty(LibPQ2.error_message(result))
             close(result)
 
             result = execute(
                 conn,
-                "SELECT no_nulls, yes_nulls FROM libpqjl_test ORDER BY no_nulls ASC;";
+                "SELECT no_nulls, yes_nulls FROM LibPQ2jl_test ORDER BY no_nulls ASC;";
                 throw_error=true
             )
             table_data = DataFrame(result)
@@ -345,15 +341,15 @@ end
         end
 
         @testset "Wrong column order" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
 
             result = execute(conn, """
-                CREATE TEMPORARY TABLE libpqjl_test (
+                CREATE TEMPORARY TABLE LibPQ2jl_test (
                     pri    bigint PRIMARY KEY,
                     sec    varchar(10)
                 );
             """)
-            @test status(result) == LibPQ.libpq_c.PGRES_COMMAND_OK
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_COMMAND_OK
             close(result)
 
             data = (pri = 1:26, sec = map(string, 'a':'z'))
@@ -362,15 +358,15 @@ end
                 "$(row.sec),$(row.pri)\n"
             end
 
-            copyin = LibPQ.CopyIn("COPY libpqjl_test FROM STDIN (FORMAT CSV);", row_strings)
+            copyin = LibPQ2.CopyIn("COPY LibPQ2jl_test FROM STDIN (FORMAT CSV);", row_strings)
 
             result = execute(conn, copyin; throw_error=false)
             @test isopen(result)
-            @test status(result) == LibPQ.libpq_c.PGRES_FATAL_ERROR
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_FATAL_ERROR
 
-            err_msg = LibPQ.error_message(result)
+            err_msg = LibPQ2.error_message(result)
             @test occursin("ERROR", err_msg)
-            if LibPQ.server_version(conn) >= v"12"
+            if LibPQ2.server_version(conn) >= v"12"
                 @test occursin("invalid input syntax for type bigint", err_msg)
             else
                 @test occursin("invalid input syntax for integer", err_msg)
@@ -380,7 +376,7 @@ end
 
             result = execute(
                 conn,
-                "SELECT pri, sec FROM libpqjl_test ORDER BY pri ASC;";
+                "SELECT pri, sec FROM LibPQ2jl_test ORDER BY pri ASC;";
                 throw_error=true
             )
             table_data = columntable(result)
@@ -391,18 +387,18 @@ end
                 "$(row.sec),$(row.pri)\n"
             end
 
-            copyin = LibPQ.CopyIn("COPY libpqjl_test FROM STDIN (FORMAT CSV);", row_strings)
-            @test_throws LibPQ.Errors.DataExceptionErrorClass execute(conn, copyin; throw_error=true)
+            copyin = LibPQ2.CopyIn("COPY LibPQ2jl_test FROM STDIN (FORMAT CSV);", row_strings)
+            @test_throws LibPQ2.Errors.DataExceptionErrorClass execute(conn, copyin; throw_error=true)
 
             close(conn)
         end
     end
 
-    @testset "LibPQ.Connection" begin
+    @testset "LibPQ2.Connection" begin
         @testset "do" begin
             local saved_conn
 
-            was_open = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true) do jl_conn
+            was_open = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true) do jl_conn
                 saved_conn = jl_conn
                 return isopen(jl_conn)
             end
@@ -410,7 +406,7 @@ end
             @test was_open
             @test !isopen(saved_conn)
 
-            @test_throws LibPQ.Errors.PQConnectionError LibPQ.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=true) do jl_conn
+            @test_throws LibPQ2.Errors.PQConnectionError LibPQ2.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=true) do jl_conn
                 saved_conn = jl_conn
                 @test false
             end
@@ -419,47 +415,47 @@ end
         end
 
         @testset "Version Numbers" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             # update this test before PostgreSQL 20.0 ;)
-            @test LibPQ.pqv"7" <= LibPQ.server_version(conn) <= LibPQ.pqv"20"
+            @test LibPQ2.pqv"7" <= LibPQ2.server_version(conn) <= LibPQ2.pqv"20"
         end
 
         @testset "Encoding" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
-            @test LibPQ.encoding(conn) == "UTF8"
+            @test LibPQ2.encoding(conn) == "UTF8"
 
-            LibPQ.set_encoding!(conn, "SQL_ASCII")
-            @test LibPQ.encoding(conn) == "SQL_ASCII"
-            LibPQ.reset_encoding!(conn)
-            @test LibPQ.encoding(conn) == "SQL_ASCII"
+            LibPQ2.set_encoding!(conn, "SQL_ASCII")
+            @test LibPQ2.encoding(conn) == "SQL_ASCII"
+            LibPQ2.reset_encoding!(conn)
+            @test LibPQ2.encoding(conn) == "SQL_ASCII"
 
             reset!(conn)
-            @test LibPQ.encoding(conn) == "SQL_ASCII"
-            LibPQ.set_encoding!(conn, "UTF8")
-            @test LibPQ.encoding(conn) == "UTF8"
-            LibPQ.reset_encoding!(conn)
-            @test LibPQ.encoding(conn) == "UTF8"
+            @test LibPQ2.encoding(conn) == "SQL_ASCII"
+            LibPQ2.set_encoding!(conn, "UTF8")
+            @test LibPQ2.encoding(conn) == "UTF8"
+            LibPQ2.reset_encoding!(conn)
+            @test LibPQ2.encoding(conn) == "UTF8"
 
             conn.encoding = "SQL_ASCII"
-            LibPQ.reset_encoding!(conn)
-            @test LibPQ.encoding(conn) == "SQL_ASCII"
+            LibPQ2.reset_encoding!(conn)
+            @test LibPQ2.encoding(conn) == "SQL_ASCII"
 
-            @test_throws LibPQ.Errors.JLConnectionError LibPQ.set_encoding!(conn, "NOT A REAL ENCODING")
+            @test_throws LibPQ2.Errors.JLConnectionError LibPQ2.set_encoding!(conn, "NOT A REAL ENCODING")
 
             close(conn)
         end
 
         @testset "Options" begin
-            conn = LibPQ.Connection(
+            conn = LibPQ2.Connection(
                 "dbname=postgres user=$DATABASE_USER";
                 options=Dict("IntervalStyle" => "postgres_verbose"),
                 throw_error=true,
                 type_map=Dict(:interval => String),
             )
 
-            conn_info = LibPQ.conninfo(conn)
+            conn_info = LibPQ2.conninfo(conn)
             options = first(filter(conn_info) do conn_opt
                 conn_opt.keyword == "options"
             end)
@@ -470,11 +466,11 @@ end
             close(conn)
 
             # ERROR: missing "=" after "barf" in connection info string
-            @test_throws LibPQ.Errors.ConninfoParseError LibPQ.conninfo("wrong")
+            @test_throws LibPQ2.Errors.ConninfoParseError LibPQ2.conninfo("wrong")
         end
 
         @testset "Time Zone" begin
-            function connection_tz(conn::LibPQ.Connection)
+            function connection_tz(conn::LibPQ2.Connection)
                 result = execute(conn, "SELECT current_setting('TIMEZONE');")
 
                 tz = columntable(result)[:current_setting][1]
@@ -484,19 +480,19 @@ end
 
             # test with rare time zones to avoid collision with actual server time zones
             # NOTE: do not run tests in Greenland
-            default_tz = LibPQ.DEFAULT_CLIENT_TIME_ZONE[]
+            default_tz = LibPQ2.DEFAULT_CLIENT_TIME_ZONE[]
             try
-                LibPQ.DEFAULT_CLIENT_TIME_ZONE[] = "America/Scoresbysund"
-                LibPQ.CONNECTION_OPTION_DEFAULTS["TimeZone"] = LibPQ.DEFAULT_CLIENT_TIME_ZONE[]
-                merge!(LibPQ.CONNECTION_PARAMETER_DEFAULTS, LibPQ._connection_parameter_dict(connection_options=LibPQ.CONNECTION_OPTION_DEFAULTS))
+                LibPQ2.DEFAULT_CLIENT_TIME_ZONE[] = "America/Scoresbysund"
+                LibPQ2.CONNECTION_OPTION_DEFAULTS["TimeZone"] = LibPQ2.DEFAULT_CLIENT_TIME_ZONE[]
+                merge!(LibPQ2.CONNECTION_PARAMETER_DEFAULTS, LibPQ2._connection_parameter_dict(connection_options=LibPQ2.CONNECTION_OPTION_DEFAULTS))
                 withenv("PGTZ" => nothing) do  # unset
-                    LibPQ.Connection(
+                    LibPQ2.Connection(
                         "dbname=postgres user=$DATABASE_USER"; throw_error=true
                     ) do conn
                         @test connection_tz(conn) == "America/Scoresbysund"
                     end
 
-                    LibPQ.Connection(
+                    LibPQ2.Connection(
                         "dbname=postgres user=$DATABASE_USER";
                         options=Dict("TimeZone" => "America/Danmarkshavn"),
                         throw_error=true,
@@ -504,7 +500,7 @@ end
                         @test connection_tz(conn) == "America/Danmarkshavn"
                     end
 
-                    LibPQ.Connection(
+                    LibPQ2.Connection(
                         "dbname=postgres user=$DATABASE_USER";
                         options=Dict("TimeZone" => ""),
                         throw_error=true,
@@ -514,17 +510,17 @@ end
                     end
                 end
 
-                # For some reason, libpq won't pick up environment variables which are set
+                # For some reason, LibPQ2 won't pick up environment variables which are set
                 # after it has been loaded. This seems to happen with Julia only; psycopg2
                 # does not have this problem. Perhaps we need to set some dlopen option?
                 withenv("PGTZ" => "America/Thule") do
-                    LibPQ.Connection(
+                    LibPQ2.Connection(
                         "dbname=postgres user=$DATABASE_USER"; throw_error=true
                     ) do conn
                         @test_broken_on_windows connection_tz(conn) == "America/Thule"
                     end
 
-                    LibPQ.Connection(
+                    LibPQ2.Connection(
                         "dbname=postgres user=$DATABASE_USER";
                         options=Dict("TimeZone" => "America/Danmarkshavn"),
                         throw_error=true,
@@ -532,7 +528,7 @@ end
                         @test_broken_on_windows connection_tz(conn) == "America/Thule"
                     end
 
-                    LibPQ.Connection(
+                    LibPQ2.Connection(
                         "dbname=postgres user=$DATABASE_USER";
                         options=Dict("TimeZone" => ""),
                         throw_error=true,
@@ -542,15 +538,15 @@ end
                 end
 
                 withenv("PGTZ" => "") do
-                    @test_nolog_on_windows LibPQ.LOGGER "error" "invalid value for parameter" try
-                        LibPQ.Connection(
+                    @test_nolog_on_windows LibPQ2.LOGGER "error" "invalid value for parameter" try
+                        LibPQ2.Connection(
                             "dbname=postgres user=$DATABASE_USER"; throw_error=true
                         )
                     catch
                     end
 
-                    @test_nolog_on_windows LibPQ.LOGGER "error" "invalid value for parameter" try
-                        LibPQ.Connection(
+                    @test_nolog_on_windows LibPQ2.LOGGER "error" "invalid value for parameter" try
+                        LibPQ2.Connection(
                             "dbname=postgres user=$DATABASE_USER";
                             options=Dict("TimeZone" => "America/Danmarkshavn"),
                             throw_error=true,
@@ -558,8 +554,8 @@ end
                     catch
                     end
 
-                    @test_nolog_on_windows LibPQ.LOGGER "error" "invalid value for parameter" try
-                        LibPQ.Connection(
+                    @test_nolog_on_windows LibPQ2.LOGGER "error" "invalid value for parameter" try
+                        LibPQ2.Connection(
                             "dbname=postgres user=$DATABASE_USER";
                             options=Dict("TimeZone" => ""),
                             throw_error=true,
@@ -568,15 +564,15 @@ end
                     end
                 end
             finally
-                LibPQ.DEFAULT_CLIENT_TIME_ZONE[] = default_tz
-                LibPQ.CONNECTION_OPTION_DEFAULTS["TimeZone"] = LibPQ.DEFAULT_CLIENT_TIME_ZONE[]
-                merge!(LibPQ.CONNECTION_PARAMETER_DEFAULTS, LibPQ._connection_parameter_dict(connection_options=LibPQ.CONNECTION_OPTION_DEFAULTS))
+                LibPQ2.DEFAULT_CLIENT_TIME_ZONE[] = default_tz
+                LibPQ2.CONNECTION_OPTION_DEFAULTS["TimeZone"] = LibPQ2.DEFAULT_CLIENT_TIME_ZONE[]
+                merge!(LibPQ2.CONNECTION_PARAMETER_DEFAULTS, LibPQ2._connection_parameter_dict(connection_options=LibPQ2.CONNECTION_OPTION_DEFAULTS))
             end
         end
 
         @testset "Finalizer" begin
             closed_flags = map(1:50) do _
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
                 closed = conn.closed
                 finalize(conn)
                 return closed
@@ -587,10 +583,10 @@ end
             @test all(closed -> closed[], closed_flags)
 
             # with Results, which don't hold a reference to Connection
-            results = LibPQ.Result[]
+            results = LibPQ2.Result[]
 
             closed_flags = map(1:50) do _
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
                 push!(results, execute(conn, "SELECT 1;"))
                 return conn.closed
             end
@@ -601,11 +597,11 @@ end
             sleep(1)
 
             @test all(closed -> closed[], closed_flags)
-            @test all(result -> LibPQ.num_rows(result) == 1, results)
+            @test all(result -> LibPQ2.num_rows(result) == 1, results)
 
             # with AsyncResults, which hold a reference to Connection
             closed_flags = asyncmap(1:50) do _
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER")
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER")
                 wait(async_execute(conn, "SELECT pg_sleep(1);"))
                 return conn.closed
             end
@@ -623,10 +619,10 @@ end
                 try
                     # could be any SSL connection, just need to get through one stage of
                     # processing successfully so it has an opportunity to time out
-                    LibPQ.Connection("host=enterprisedb.com port=443"; connect_timeout=0.01)
+                    LibPQ2.Connection("host=enterprisedb.com port=443"; connect_timeout=0.01)
                     @test false
                 catch err
-                    @test err isa LibPQ.Errors.JLConnectionError
+                    @test err isa LibPQ2.Errors.JLConnectionError
                     @test occursin("timed out", sprint(showerror, err))
                 end
             end
@@ -636,60 +632,60 @@ end
             # to work on Windows
             @static if !Sys.iswindows()
                 @testset "closed socket (EBADF)" begin
-                    conn = LibPQ.libpq_c.PQconnectStart("dbname=123fake user=$DATABASE_USER")
-                    close(Base.Libc.FILE(LibPQ.socket(conn), "r"))  # close socket
-                    LibPQ._connect_poll(conn, Timer(0), 0)
+                    conn = LibPQ2.LibPQ2_c.PQconnectStart("dbname=123fake user=$DATABASE_USER")
+                    close(Base.Libc.FILE(LibPQ2.socket(conn), "r"))  # close socket
+                    LibPQ2._connect_poll(conn, Timer(0), 0)
 
                     try
-                        LibPQ.handle_new_connection(LibPQ.Connection(conn))
+                        LibPQ2.handle_new_connection(LibPQ2.Connection(conn))
                         @test false
                     catch err
-                        @test err isa LibPQ.Errors.PQConnectionError
+                        @test err isa LibPQ2.Errors.PQConnectionError
                         @test occursin("Bad file descriptor", sprint(show, err))
                     end
                 end
             end
 
             @testset "throw_error=false" begin
-                conn = LibPQ.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=false)
-                @test conn isa LibPQ.Connection
-                @test status(conn) == LibPQ.libpq_c.CONNECTION_BAD
+                conn = LibPQ2.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=false)
+                @test conn isa LibPQ2.Connection
+                @test status(conn) == LibPQ2.LibPQ2_c.CONNECTION_BAD
                 @test isopen(conn)
 
                 reset!(conn; throw_error=false)
-                @test status(conn) == LibPQ.libpq_c.CONNECTION_BAD
+                @test status(conn) == LibPQ2.LibPQ2_c.CONNECTION_BAD
                 @test isopen(conn)
 
                 close(conn)
                 @test !isopen(conn)
                 @test conn.closed[] == true
-                @test_throws LibPQ.Errors.JLConnectionError reset!(conn; throw_error=false)
+                @test_throws LibPQ2.Errors.JLConnectionError reset!(conn; throw_error=false)
             end
 
             @testset "throw_error=true" begin
-                @test_throws LibPQ.Errors.PQConnectionError LibPQ.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=true)
+                @test_throws LibPQ2.Errors.PQConnectionError LibPQ2.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=true)
 
-                conn = LibPQ.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=false)
-                @test conn isa LibPQ.Connection
-                @test status(conn) == LibPQ.libpq_c.CONNECTION_BAD
+                conn = LibPQ2.Connection("dbname=123fake user=$DATABASE_USER"; throw_error=false)
+                @test conn isa LibPQ2.Connection
+                @test status(conn) == LibPQ2.LibPQ2_c.CONNECTION_BAD
                 @test isopen(conn)
 
-                @test_throws LibPQ.Errors.PQConnectionError reset!(conn; throw_error=true)
+                @test_throws LibPQ2.Errors.PQConnectionError reset!(conn; throw_error=true)
                 @test !isopen(conn)
                 @test conn.closed[] == true
-                @test_throws LibPQ.Errors.JLConnectionError reset!(conn; throw_error=true)
+                @test_throws LibPQ2.Errors.JLConnectionError reset!(conn; throw_error=true)
             end
         end
     end
 
     @testset "Results" begin
         @testset "Nulls" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             result = execute(conn, "SELECT NULL"; throw_error=true)
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_columns(result) == 1
-            @test LibPQ.num_rows(result) == 1
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_columns(result) == 1
+            @test LibPQ2.num_rows(result) == 1
 
             data = columntable(result)
 
@@ -705,9 +701,9 @@ end
                 """;
                 throw_error=true,
             )
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_rows(result) == 2
-            @test LibPQ.num_columns(result) == 2
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_rows(result) == 2
+            @test LibPQ2.num_columns(result) == 2
 
             data = columntable(result)
 
@@ -727,10 +723,10 @@ end
                 """;
                 throw_error=true,
             )
-            @test result isa LibPQ.Result
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_rows(result) == 2
-            @test LibPQ.num_columns(result) == 2
+            @test result isa LibPQ2.Result
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_rows(result) == 2
+            @test LibPQ2.num_columns(result) == 2
 
             data = columntable(result)
 
@@ -757,10 +753,10 @@ end
             ]
             results = execute.(conn, commands; throw_error=true)
             for result in results
-                @test result isa LibPQ.Result
-                @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-                @test LibPQ.num_rows(result) == 2
-                @test LibPQ.num_columns(result) == 2
+                @test result isa LibPQ2.Result
+                @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+                @test LibPQ2.num_rows(result) == 2
+                @test LibPQ2.num_columns(result) == 2
                 close(result)
             end
 
@@ -768,12 +764,12 @@ end
         end
 
         @testset "Not Nulls" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             result = execute(conn, "SELECT NULL"; not_null=[false], throw_error=true)
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_columns(result) == 1
-            @test LibPQ.num_rows(result) == 1
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_columns(result) == 1
+            @test LibPQ2.num_rows(result) == 1
 
             data = columntable(result)
 
@@ -782,18 +778,18 @@ end
             close(result)
 
             result = execute(conn, "SELECT NULL"; not_null=true, throw_error=true)
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_columns(result) == 1
-            @test LibPQ.num_rows(result) == 1
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_columns(result) == 1
+            @test LibPQ2.num_rows(result) == 1
 
             @test_throws MethodError columntable(result)[1][1]
 
             close(result)
 
             result = execute(conn, "SELECT NULL"; not_null=[true], throw_error=true)
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_columns(result) == 1
-            @test LibPQ.num_rows(result) == 1
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_columns(result) == 1
+            @test LibPQ2.num_rows(result) == 1
 
             @test_throws MethodError columntable(result)[1][1]
 
@@ -808,9 +804,9 @@ end
                 not_null=[true, false],
                 throw_error=true,
             )
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_rows(result) == 2
-            @test LibPQ.num_columns(result) == 2
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_rows(result) == 2
+            @test LibPQ2.num_columns(result) == 2
 
             data = columntable(result)
 
@@ -831,9 +827,9 @@ end
                 not_null=["no_nulls"],
                 throw_error=true,
             )
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_rows(result) == 2
-            @test LibPQ.num_columns(result) == 2
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_rows(result) == 2
+            @test LibPQ2.num_columns(result) == 2
 
             data = columntable(result)
 
@@ -854,9 +850,9 @@ end
                 not_null=[:fake_column, :no_nulls],
                 throw_error=true,
             )
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_rows(result) == 2
-            @test LibPQ.num_columns(result) == 2
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_rows(result) == 2
+            @test LibPQ2.num_columns(result) == 2
 
             data = columntable(result)
 
@@ -877,9 +873,9 @@ end
                 not_null=false,
                 throw_error=true,
             )
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.num_rows(result) == 2
-            @test LibPQ.num_columns(result) == 2
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.num_rows(result) == 2
+            @test LibPQ2.num_columns(result) == 2
 
             data = columntable(result)
 
@@ -893,7 +889,7 @@ end
         end
 
         @testset "Tables.jl" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             result = execute(conn, """
                 SELECT no_nulls, yes_nulls FROM (
@@ -935,7 +931,7 @@ end
         end
 
         @testset "Duplicate names" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             result = execute(conn, "SELECT 1 AS col, 2 AS col;", not_null=true, throw_error=true)
             columns = Tables.columns(result)
@@ -951,12 +947,12 @@ end
         end
 
         @testset "Uppercase Columns" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             result = execute(conn, "SELECT 1 AS \"Column\";")
             @test num_columns(result) == 1
-            @test LibPQ.column_name(result, 1) == "Column"
-            @test LibPQ.column_number(result, :Column) == 1
+            @test LibPQ2.column_name(result, 1) == "Column"
+            @test LibPQ2.column_number(result, :Column) == 1
 
             table = Tables.columntable(result)
             @test :Column in propertynames(table)
@@ -969,34 +965,34 @@ end
         end
 
         @testset "PQResultError" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             try
                 execute(conn, "SELECT log(-1);")
                 @test false
             catch err
-                @test err isa LibPQ.Errors.InvalidArgumentForLogarithm
-                @test LibPQ.Errors.error_class(err) == LibPQ.Errors.C22
-                @test LibPQ.Errors.error_code(err) == LibPQ.Errors.E2201E
+                @test err isa LibPQ2.Errors.InvalidArgumentForLogarithm
+                @test LibPQ2.Errors.error_class(err) == LibPQ2.Errors.C22
+                @test LibPQ2.Errors.error_code(err) == LibPQ2.Errors.E2201E
             end
 
-            @test sprint(show, LibPQ.Errors.C22) == "LibPQ.Errors.C22"
-            @test string(LibPQ.Errors.C22) == "C22"
-            @test sprint(LibPQ.Errors.C22) do io, class
+            @test sprint(show, LibPQ2.Errors.C22) == "LibPQ2.Errors.C22"
+            @test string(LibPQ2.Errors.C22) == "C22"
+            @test sprint(LibPQ2.Errors.C22) do io, class
                 show(io, MIME"text/plain"(), class)
-            end == "C22::LibPQ.Errors.Class"
+            end == "C22::LibPQ2.Errors.Class"
 
-            @test sprint(show, LibPQ.Errors.E2201E) == "LibPQ.Errors.E2201E"
-            @test string(LibPQ.Errors.E2201E) == "E2201E"
-            @test sprint(LibPQ.Errors.E2201E) do io, code
+            @test sprint(show, LibPQ2.Errors.E2201E) == "LibPQ2.Errors.E2201E"
+            @test string(LibPQ2.Errors.E2201E) == "E2201E"
+            @test sprint(LibPQ2.Errors.E2201E) do io, code
                 show(io, MIME"text/plain"(), code)
-            end == "E2201E::LibPQ.Errors.ErrorCode"
+            end == "E2201E::LibPQ2.Errors.ErrorCode"
 
             result = execute(conn, "SELECT log(-1);"; throw_error=false)
-            err = LibPQ.Errors.PQResultError(result; verbose=false)
-            verbose_err = LibPQ.Errors.PQResultError(result; verbose=true)
-            @test err isa LibPQ.Errors.InvalidArgumentForLogarithm
-            @test verbose_err isa LibPQ.Errors.InvalidArgumentForLogarithm
+            err = LibPQ2.Errors.PQResultError(result; verbose=false)
+            verbose_err = LibPQ2.Errors.PQResultError(result; verbose=true)
+            @test err isa LibPQ2.Errors.InvalidArgumentForLogarithm
+            @test verbose_err isa LibPQ2.Errors.InvalidArgumentForLogarithm
             @test err.msg == verbose_err.msg
             @test err.verbose_msg === nothing
             @test verbose_err.verbose_msg !== nothing
@@ -1005,9 +1001,9 @@ end
             close(result)
 
             result = execute(conn, "SELECT 1;")
-            unknown_error = LibPQ.Errors.PQResultError(result; verbose=true)
-            @test unknown_error isa LibPQ.Errors.UnknownErrorClass
-            @test unknown_error isa LibPQ.Errors.UnknownError
+            unknown_error = LibPQ2.Errors.PQResultError(result; verbose=true)
+            @test unknown_error isa LibPQ2.Errors.UnknownErrorClass
+            @test unknown_error isa LibPQ2.Errors.UnknownError
             @test occursin("PGresult is not an error result", unknown_error.verbose_msg)
             close(result)
 
@@ -1016,16 +1012,16 @@ end
 
         @testset "Type Conversions" begin
             @testset "Deprecations" begin
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                 result = execute(conn, "SELECT 'infinity'::timestamp;")
 
                 try
-                    oid = LibPQ.column_oids(result)[1]
+                    oid = LibPQ2.column_oids(result)[1]
                     func = result.column_funcs[1]
 
                     # Parsing this will show a depwarn
-                    @test (@test_deprecated func(LibPQ.PQValue{oid}(result, 1, 1))) == typemax(DateTime)
+                    @test (@test_deprecated func(LibPQ2.PQValue{oid}(result, 1, 1))) == typemax(DateTime)
                 finally
                     close(result)
                 end
@@ -1033,7 +1029,7 @@ end
             end
 
             @testset "Automatic" begin
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                 result = execute(conn, """
                     SELECT oid, typname, typlen, typbyval, typcategory
@@ -1043,17 +1039,17 @@ end
                     """;
                     throw_error=true,
                 )
-                @test result isa LibPQ.Result
-                @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-                @test LibPQ.num_rows(result) == 3
-                @test LibPQ.num_columns(result) == 5
-                @test LibPQ.column_types(result) == [LibPQ.Oid, String, Int16, Bool, LibPQ.PQChar]
+                @test result isa LibPQ2.Result
+                @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+                @test LibPQ2.num_rows(result) == 3
+                @test LibPQ2.num_columns(result) == 5
+                @test LibPQ2.column_types(result) == [LibPQ2.Oid, String, Int16, Bool, LibPQ2.PQChar]
 
                 data = columntable(result)
 
                 @test map(eltype, collect(values(data))) ==
-                    map(T -> Union{T, Missing}, [LibPQ.Oid, String, Int16, Bool, LibPQ.PQChar])
-                @test data[:oid] == LibPQ.Oid[LibPQ.PQ_SYSTEM_TYPES[t] for t in (:bool, :int8, :text)]
+                    map(T -> Union{T, Missing}, [LibPQ2.Oid, String, Int16, Bool, LibPQ2.PQChar])
+                @test data[:oid] == LibPQ2.Oid[LibPQ2.PQ_SYSTEM_TYPES[t] for t in (:bool, :int8, :text)]
                 @test data[:typname] == ["bool", "int8", "text"]
                 @test data[:typlen] == [1, 8, -1]
                 @test data[:typbyval] == [true, true, false]
@@ -1064,7 +1060,7 @@ end
             end
 
             @testset "Overrides" begin
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                 result = execute(conn, "SELECT 4::bigint;")
                 @test first(first(result)) === Int64(4)
@@ -1086,7 +1082,7 @@ end
                     conn,
                     "SELECT 'deadbeef'::text;",  # unknown type on PostgreSQL < 10
                     type_map=Dict(:text=>Vector{UInt8}),
-                    conversions=Dict((:text, Vector{UInt8})=>hex2bytes∘LibPQ.string_view),
+                    conversions=Dict((:text, Vector{UInt8})=>hex2bytes∘LibPQ2.string_view),
                 )
                 @test first(first(result)) == [0xde, 0xad, 0xbe, 0xef]
 
@@ -1103,7 +1099,7 @@ end
 
             @testset "Parsing" begin
                 @testset "Default Types" begin
-                    conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                    conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                     test_data = [
                         ("3", Cint(3)),
@@ -1112,7 +1108,7 @@ end
                         ("3::int2", Int16(3)),
                         ("3::float8", Float64(3)),
                         ("3::float4", Float32(3)),
-                        ("3::oid", LibPQ.Oid(3)),
+                        ("3::oid", LibPQ2.Oid(3)),
                         ("3::numeric", decimal("3")),
                         ("$(BigFloat(pi))::numeric", decimal(BigFloat(pi))),
                         ("$(big"4608230166434464229556241992703")::numeric", parse(Decimal, "4608230166434464229556241992703")),
@@ -1127,7 +1123,7 @@ end
                         ("'hello'::char(10)", "hello"),
                         ("'hello  '::char(10)", "hello"),
                         ("'hello  '::varchar(10)", "hello  "),
-                        ("'3'::\"char\"", LibPQ.PQChar('3')),
+                        ("'3'::\"char\"", LibPQ2.PQChar('3')),
                         ("'t'::bool", true),
                         ("'T'::bool", true),
                         ("'true'::bool", true),
@@ -1184,14 +1180,14 @@ end
                         ("'{{{1,2,3},{4,5,6}}}'::float4[]", Array{Union{Float32, Missing}}(reshape(Float32[1 2 3; 4 5 6], 1, 2, 3))),
                         ("'{{{1,2,3},{4,5,6}}}'::float8[]", Array{Union{Float64, Missing}}(reshape(Float64[1 2 3; 4 5 6], 1, 2, 3))),
                         ("'{{{NULL,2,3},{4,NULL,6}}}'::float8[]", Array{Union{Float64, Missing}}(reshape(Union{Float64, Missing}[missing 2 3; 4 missing 6], 1, 2, 3))),
-                        ("'{{{1,2,3},{4,5,6}}}'::oid[]", Array{Union{LibPQ.Oid, Missing}}(reshape(LibPQ.Oid[1 2 3; 4 5 6], 1, 2, 3))),
+                        ("'{{{1,2,3},{4,5,6}}}'::oid[]", Array{Union{LibPQ2.Oid, Missing}}(reshape(LibPQ2.Oid[1 2 3; 4 5 6], 1, 2, 3))),
                         ("'{{{1,2,3},{4,5,6}}}'::numeric[]", Array{Union{Decimal, Missing}}(reshape(Decimal[1 2 3; 4 5 6], 1, 2, 3))),
                         ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::int2[]", copyto!(OffsetArray{Union{Missing, Int16}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
                         ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::int4[]", copyto!(OffsetArray{Union{Missing, Int32}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
                         ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::int8[]", copyto!(OffsetArray{Union{Missing, Int64}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
                         ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::float4[]", copyto!(OffsetArray{Union{Missing, Float32}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
                         ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::float8[]", copyto!(OffsetArray{Union{Missing, Float64}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
-                        ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::oid[]", copyto!(OffsetArray{Union{Missing, LibPQ.Oid}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
+                        ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::oid[]", copyto!(OffsetArray{Union{Missing, LibPQ2.Oid}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
                         ("'[1:1][-2:-1][3:5]={{{1,2,3},{4,5,6}}}'::numeric[]", copyto!(OffsetArray{Union{Missing, Decimal}}(undef, 1:1, -2:-1, 3:5), [1 2 3; 4 5 6])),
                         ("'[3,7)'::int4range", Interval{Int32, Closed, Open}(3, 7)),
                         ("'(3,7)'::int4range", Interval{Int32, Closed, Open}(4, 7)),
@@ -1225,13 +1221,13 @@ end
                         result = execute(conn, "SELECT $test_str;")
 
                         try
-                            @test LibPQ.num_rows(result) == 1
-                            @test LibPQ.num_columns(result) == 1
-                            @test LibPQ.column_types(result)[1] >: typeof(data)
+                            @test LibPQ2.num_rows(result) == 1
+                            @test LibPQ2.num_columns(result) == 1
+                            @test LibPQ2.column_types(result)[1] >: typeof(data)
 
-                            oid = LibPQ.column_oids(result)[1]
+                            oid = LibPQ2.column_oids(result)[1]
                             func = result.column_funcs[1]
-                            parsed = func(LibPQ.PQValue{oid}(result, 1, 1))
+                            parsed = func(LibPQ2.PQValue{oid}(result, 1, 1))
                             @test isequal(parsed, data)
                             @test typeof(parsed) == typeof(data)
                         finally
@@ -1243,7 +1239,7 @@ end
                 end
 
                 @testset "Specified Types" begin
-                    conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                    conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                     test_data = [
                         ("3", UInt, UInt(3)),
@@ -1273,13 +1269,13 @@ end
                         )
 
                         try
-                            @test LibPQ.num_rows(result) == 1
-                            @test LibPQ.num_columns(result) == 1
-                            @test LibPQ.column_types(result)[1] >: typeof(data)
+                            @test LibPQ2.num_rows(result) == 1
+                            @test LibPQ2.num_columns(result) == 1
+                            @test LibPQ2.column_types(result)[1] >: typeof(data)
 
-                            oid = LibPQ.column_oids(result)[1]
+                            oid = LibPQ2.column_oids(result)[1]
                             func = result.column_funcs[1]
-                            parsed = func(LibPQ.PQValue{oid}(result, 1, 1))
+                            parsed = func(LibPQ2.PQValue{oid}(result, 1, 1))
                             @test parsed == data
                             @test typeof(parsed) == typeof(data)
                         finally
@@ -1291,7 +1287,7 @@ end
                 end
 
                 @testset "Interval Regex" begin
-                    regex = LibPQ.INTERVAL_REGEX[]
+                    regex = LibPQ2.INTERVAL_REGEX[]
                     inputs = [
                         "P1Y2M3DT4H5M6S",
                         "PT6.1S",
@@ -1311,7 +1307,7 @@ end
         end
 
         @testset "Parameters" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             @testset "Arrays" begin
                 result = execute(conn, "SELECT 'foo' = ANY(\$1)", [["bar", "foo"]])
@@ -1421,36 +1417,36 @@ end
 
         @testset "Query Errors" begin
             @testset "Syntax Errors" begin
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                 result = execute(conn, "SELORCT NUUL;"; throw_error=false)
-                @test status(result) == LibPQ.libpq_c.PGRES_FATAL_ERROR
+                @test status(result) == LibPQ2.LibPQ2_c.PGRES_FATAL_ERROR
                 # We're expecting zeros per "33.3.2. Retrieving Query Result Information"
-                # https://www.postgresql.org/docs/10/static/libpq-exec.html#LIBPQ-EXEC-SELECT-INFO
-                @test LibPQ.num_rows(result) == 0
-                @test LibPQ.num_columns(result) == 0
+                # https://www.postgresql.org/docs/10/static/LibPQ2-exec.html#LibPQ2-EXEC-SELECT-INFO
+                @test LibPQ2.num_rows(result) == 0
+                @test LibPQ2.num_columns(result) == 0
                 close(result)
                 @test !isopen(result)
 
-                @test_throws LibPQ.Errors.SyntaxError execute(conn, "SELORCT NUUL;"; throw_error=true)
+                @test_throws LibPQ2.Errors.SyntaxError execute(conn, "SELORCT NUUL;"; throw_error=true)
 
                 close(conn)
                 @test !isopen(conn)
             end
 
             @testset "Wrong No. Parameters" begin
-                conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+                conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
                 result = execute(conn, "SELORCT \$1;", String[]; throw_error=false)
-                @test status(result) == LibPQ.libpq_c.PGRES_FATAL_ERROR
+                @test status(result) == LibPQ2.LibPQ2_c.PGRES_FATAL_ERROR
                 # We're expecting zeros per "33.3.2. Retrieving Query Result Information"
-                # https://www.postgresql.org/docs/10/static/libpq-exec.html#LIBPQ-EXEC-SELECT-INFO
-                @test LibPQ.num_rows(result) == 0
-                @test LibPQ.num_columns(result) == 0
+                # https://www.postgresql.org/docs/10/static/LibPQ2-exec.html#LibPQ2-EXEC-SELECT-INFO
+                @test LibPQ2.num_rows(result) == 0
+                @test LibPQ2.num_columns(result) == 0
                 close(result)
                 @test !isopen(result)
 
-                @test_throws LibPQ.Errors.SyntaxError execute(
+                @test_throws LibPQ2.Errors.SyntaxError execute(
                     conn,
                     "SELORCT \$1;",
                     String[];
@@ -1463,7 +1459,7 @@ end
         end
 
         @testset "Interface Errors" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             result = execute(
                 conn,
@@ -1480,20 +1476,20 @@ end
 
     @testset "Statements" begin
         @testset "No Params, Output" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             stmt = prepare(conn, "SELECT oid, typname FROM pg_type")
 
-            @test LibPQ.num_columns(stmt) == 2
-            @test LibPQ.num_params(stmt) == 0
-            @test LibPQ.column_names(stmt) == ["oid", "typname"]
+            @test LibPQ2.num_columns(stmt) == 2
+            @test LibPQ2.num_params(stmt) == 0
+            @test LibPQ2.column_names(stmt) == ["oid", "typname"]
 
             result = execute(stmt; throw_error=true)
 
-            @test LibPQ.num_columns(result) == 2
-            @test LibPQ.column_names(result) == ["oid", "typname"]
-            @test LibPQ.column_types(result) == [LibPQ.Oid, String]
-            @test LibPQ.num_rows(result) > 0
+            @test LibPQ2.num_columns(result) == 2
+            @test LibPQ2.column_names(result) == ["oid", "typname"]
+            @test LibPQ2.column_types(result) == [LibPQ2.Oid, String]
+            @test LibPQ2.num_rows(result) > 0
 
             close(result)
 
@@ -1501,20 +1497,20 @@ end
         end
 
         @testset "Params, Output" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             stmt = prepare(conn, "SELECT oid, typname FROM pg_type WHERE oid = \$1")
 
-            @test LibPQ.num_columns(stmt) == 2
-            @test LibPQ.num_params(stmt) == 1
-            @test LibPQ.column_names(stmt) == ["oid", "typname"]
+            @test LibPQ2.num_columns(stmt) == 2
+            @test LibPQ2.num_params(stmt) == 1
+            @test LibPQ2.column_names(stmt) == ["oid", "typname"]
 
             result = execute(stmt, [16]; throw_error=true)
 
-            @test LibPQ.num_columns(result) == 2
-            @test LibPQ.column_names(result) == ["oid", "typname"]
-            @test LibPQ.column_types(result) == [LibPQ.Oid, String]
-            @test LibPQ.num_rows(result) == 1
+            @test LibPQ2.num_columns(result) == 2
+            @test LibPQ2.column_names(result) == ["oid", "typname"]
+            @test LibPQ2.column_types(result) == [LibPQ2.Oid, String]
+            @test LibPQ2.num_rows(result) == 1
 
             data = columntable(result)
             @test data[:oid][1] == 16
@@ -1527,32 +1523,32 @@ end
     end
 
     @testset "AsyncResults" begin
-        trywait(ar::LibPQ.AsyncResult) = (try wait(ar) catch end; nothing)
+        trywait(ar::LibPQ2.AsyncResult) = (try wait(ar) catch end; nothing)
 
         @testset "Basic" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             ar = async_execute(conn, "SELECT pg_sleep(2);"; throw_error=false)
             yield()
             @test !isready(ar)
-            @test !LibPQ.iserror(ar)
+            @test !LibPQ2.iserror(ar)
             @test conn.async_result === ar
 
             wait(ar)
             @test isready(ar)
-            @test !LibPQ.iserror(ar)
+            @test !LibPQ2.iserror(ar)
             @test conn.async_result === nothing
 
             result = fetch(ar)
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
-            @test LibPQ.column_name(result, 1) == "pg_sleep"
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
+            @test LibPQ2.column_name(result, 1) == "pg_sleep"
 
             close(result)
             close(conn)
         end
 
         @testset "Parameters" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             ar = async_execute(
                 conn,
@@ -1563,16 +1559,16 @@ end
 
             wait(ar)
             @test isready(ar)
-            @test !LibPQ.iserror(ar)
+            @test !LibPQ2.iserror(ar)
             @test conn.async_result === nothing
 
             result = fetch(ar)
-            @test result isa LibPQ.Result
-            @test status(result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+            @test result isa LibPQ2.Result
+            @test status(result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
             @test isopen(result)
-            @test LibPQ.num_columns(result) == 1
-            @test LibPQ.num_rows(result) == 1
-            @test LibPQ.column_name(result, 1) == "typname"
+            @test LibPQ2.num_columns(result) == 1
+            @test LibPQ2.num_rows(result) == 1
+            @test LibPQ2.column_name(result, 1) == "typname"
 
             data = columntable(result)
 
@@ -1584,7 +1580,7 @@ end
 
         # Ensures queries wait for previous query completion before starting
         @testset "Wait in line to complete" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             first_ar = async_execute(conn, "SELECT pg_sleep(4);")
             yield()
@@ -1596,15 +1592,15 @@ end
             second_result = fetch(second_ar)
             @test isready(first_ar)
             @test isready(second_ar)
-            @test !LibPQ.iserror(first_ar)
-            @test !LibPQ.iserror(second_ar)
-            @test status(second_result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+            @test !LibPQ2.iserror(first_ar)
+            @test !LibPQ2.iserror(second_ar)
+            @test status(second_result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
             @test conn.async_result === nothing
 
             first_result = fetch(first_ar)
             @test isready(first_ar)
-            @test !LibPQ.iserror(first_ar)
-            @test status(second_result) == LibPQ.libpq_c.PGRES_TUPLES_OK
+            @test !LibPQ2.iserror(first_ar)
+            @test status(second_result) == LibPQ2.LibPQ2_c.PGRES_TUPLES_OK
             @test conn.async_result === nothing
 
             close(second_result)
@@ -1613,7 +1609,7 @@ end
         end
 
         @testset "Cancel" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             # final query needs to be one that actually does something
             # on Windows, first query also needs to do something
@@ -1623,13 +1619,13 @@ end
             )
             yield()
             @test !isready(ar)
-            @test !LibPQ.iserror(ar)
+            @test !LibPQ2.iserror(ar)
             @test conn.async_result === ar
 
             cancel(ar)
             trywait(ar)
             @test isready(ar)
-            @test LibPQ.iserror(ar)
+            @test LibPQ2.iserror(ar)
             @test conn.async_result === nothing
 
             local err_msg = ""
@@ -1645,7 +1641,7 @@ end
         end
 
         @testset "Canceled by closing connection" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             # final query needs to be one that actually does something
             # on Windows, first query also needs to do something
@@ -1655,13 +1651,13 @@ end
             )
             yield()
             @test !isready(ar)
-            @test !LibPQ.iserror(ar)
+            @test !LibPQ2.iserror(ar)
             @test conn.async_result === ar
 
             close(conn)
             trywait(ar)
             @test isready(ar)
-            @test LibPQ.iserror(ar)
+            @test LibPQ2.iserror(ar)
             @test conn.async_result === nothing
 
             local err_msg = ""
@@ -1677,7 +1673,7 @@ end
         end
 
         @testset "FDWatcher: bad file descriptor (EBADF)" begin
-            conn = LibPQ.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
+            conn = LibPQ2.Connection("dbname=postgres user=$DATABASE_USER"; throw_error=true)
 
             ar = async_execute(conn, "SELECT pg_sleep(3); SELECT * FROM pg_type;")
             yield()
@@ -1694,7 +1690,7 @@ end
                         err = err.task.exception
                     end
                 end
-                @test err isa LibPQ.Errors.JLConnectionError
+                @test err isa LibPQ2.Errors.JLConnectionError
             end
 
             close(conn)

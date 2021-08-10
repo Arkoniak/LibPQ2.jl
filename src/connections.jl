@@ -124,12 +124,12 @@ function handle_new_connection(jl_conn::Connection; throw_error::Bool=true)
 
         if throw_error
             close(jl_conn)
-            error(LOGGER, err)
+            error(err)
         else
-            warn(LOGGER, err)
+            @warn err
         end
     else
-        debug(LOGGER, "Connection established: $(jl_conn.conn)")
+        @debug "Connection established: $(jl_conn.conn)"
         # if connection is successful, set client_encoding
         reset_encoding!(jl_conn)
     end
@@ -140,7 +140,7 @@ function handle_new_connection(jl_conn::Connection; throw_error::Bool=true)
             # finalizers can't task swtich, but they can schedule tasks
             @async begin
                 if !atomic_cas!(closed, false, true)
-                    debug(LOGGER, "Closing connection $(conn_ptr) in finalizer")
+                    @debug "Closing connection $(conn_ptr) in finalizer"
                     # we don't need to acquire a lock, because if anyone else is holding a
                     # lock on the connection (using lock(::Connection)) then it won't be
                     # cleaned up by the gc yet

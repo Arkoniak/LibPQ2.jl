@@ -58,9 +58,11 @@ function execute(
 
         if result_status != libpq_c.PGRES_COPY_IN
             if !(result_status in (libpq_c.PGRES_BAD_RESPONSE, libpq_c.PGRES_FATAL_ERROR))
-                level(LOGGER, Errors.JLResultError(
-                    "Expected PGRES_COPY_IN after COPY query, got $result_status"
-                ))
+                if throw_error
+                    error(Errors.JLResultError("Expected PGRES_COPY_IN after COPY query, got $result_status"))
+                else
+                    @warn Errors.JLResultError("Expected PGRES_COPY_IN after COPY query, got $result_status")
+                end
             end
             return result
         end
@@ -71,7 +73,11 @@ function execute(
 
         status_code = put_copy_end(jl_conn)
         if status_code == -1
-            level(LOGGER, Errors.PQConnectionError(jl_conn))
+            if throw_error
+                error(Errors.PQConnectionError(jl_conn))
+            else
+                @warn Errors.PQConnectionError(jl_conn)
+            end
         end
 
         libpq_c.PQgetResult(jl_conn.conn)

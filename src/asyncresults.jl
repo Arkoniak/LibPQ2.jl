@@ -158,11 +158,9 @@ function _cancel(jl_conn::Connection)
         errbuf = zeros(UInt8, errbuf_size)
         success = libpq_c.PQcancel(cancel_ptr, pointer(errbuf), errbuf_size) == 1
         if !success
-            warn(LOGGER, Errors.JLConnectionError(
-                "Failed cancelling query: $(String(errbuf))"
-            ))
+            @warn Errors.JLConnectionError("Failed cancelling query: $(String(errbuf))")
         else
-            debug(LOGGER, "Cancelled query for connection $(jl_conn.conn)")
+            @debug "Cancelled query for connection $(jl_conn.conn)"
         end
     finally
         libpq_c.PQfreeCancel(cancel_ptr)
